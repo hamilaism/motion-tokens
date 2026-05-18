@@ -1,0 +1,204 @@
+{
+  "$schema": "https://tr.designtokens.org/format/",
+  "$description": "Motion token baseline set — Ch. 25 reference implementation. Levels 1–3 of the maturity scale. Spring configs use a custom type pending DTCG spec extension.",
+
+  "duration": {
+    "$type": "duration",
+    "$description": "Primitive duration scale. Values are raw design decisions — brand-variable.",
+    "50":  { "$value": "50ms",   "$description": "Imperceptible threshold" },
+    "100": { "$value": "100ms",  "$description": "Micro-interaction baseline" },
+    "150": { "$value": "150ms" },
+    "200": { "$value": "200ms",  "$description": "Standard UI default" },
+    "300": { "$value": "300ms" },
+    "400": { "$value": "400ms",  "$description": "Significant state change" },
+    "500": { "$value": "500ms" },
+    "700": { "$value": "700ms",  "$description": "Deliberate / storytelling" }
+  },
+
+  "easing": {
+    "$description": "Primitive easing curves. Each curve is a single concept — the 4 control points are not individually tokenizable.",
+    "linear": {
+      "$type": "cubicBezier",
+      "$value": [0, 0, 1, 1],
+      "$description": "Mechanical, continuous — loaders, progress bars"
+    },
+    "standard": {
+      "$type": "cubicBezier",
+      "$value": [0.4, 0, 0.2, 1],
+      "$description": "Default movement within screen"
+    },
+    "enter": {
+      "$type": "cubicBezier",
+      "$value": [0, 0, 0.2, 1],
+      "$description": "Decelerate — element arriving, gaining presence"
+    },
+    "exit": {
+      "$type": "cubicBezier",
+      "$value": [0.4, 0, 1, 1],
+      "$description": "Accelerate — element leaving, releasing control"
+    },
+    "emphasize": {
+      "$type": "cubicBezier",
+      "$value": [0.2, 0, 0, 1],
+      "$description": "Attention-drawing movement — M3 easing-emphasized approximation"
+    }
+  },
+
+  "spring": {
+    "$description": "Primitive spring configs. Custom type — DTCG does not yet define a spring type. Resolver needed to transform to CSS linear() for web targets. See spring-resolver.js.",
+    "config": {
+      "crisp": {
+        "$type": "custom-spring",
+        "$value": { "stiffness": 500, "damping": 45, "mass": 1 },
+        "$description": "Tight, precise — critically damped (no overshoot). For controls, toggles, precise spatial changes.",
+        "$extensions": {
+          "resolver-validated": "springToLinear(500, 45, 1) → dampingRatio ≈ 1.006, settlement ≈ 250ms",
+          "swiftui": ".spring(response: 0.25, dampingFraction: 1.0)"
+        }
+      },
+      "gentle": {
+        "$type": "custom-spring",
+        "$value": { "stiffness": 200, "damping": 20, "mass": 1 },
+        "$description": "Soft, unhurried settle. For panels, drawers, medium-weight transitions.",
+        "$extensions": {
+          "resolver-validated": "springToLinear(200, 20, 1) → dampingRatio ≈ 0.707, settlement ≈ 535ms",
+          "swiftui": ".spring(response: 0.45, dampingFraction: 0.71)"
+        }
+      },
+      "bouncy": {
+        "$type": "custom-spring",
+        "$value": { "stiffness": 300, "damping": 12, "mass": 1 },
+        "$description": "Visible overshoot — expressive brand motion only. Not safe for opacity or color. Long settlement (~885ms) is intentional — use only for deliberate brand moments.",
+        "$extensions": {
+          "resolver-validated": "springToLinear(300, 12, 1) → dampingRatio ≈ 0.346, settlement ≈ 885ms",
+          "swiftui": ".spring(response: 0.5, dampingFraction: 0.35)",
+          "warning": "dampingRatio 0.35 — significant overshoot. Spatial properties only (position, scale). Never on opacity or color. 885ms settlement: suitable for brand moments, not micro-interactions."
+        }
+      }
+    }
+  },
+
+  "motion": {
+    "$description": "Semantic layer — named aliases that reference primitives and carry intent.",
+
+    "duration": {
+      "$type": "duration",
+      "$description": "Named duration intents. Reference primitives; carry usage meaning.",
+      "instant":    { "$value": "{duration.50}",  "$description": "Imperceptible state feedback — hover states, active states" },
+      "fast":       { "$value": "{duration.100}", "$description": "Micro-interactions — button press, checkbox, toggle" },
+      "default":    { "$value": "{duration.200}", "$description": "Standard UI transitions — tab switch, dropdown open" },
+      "slow":       { "$value": "{duration.400}", "$description": "Significant appearances — modal, panel, overlay" },
+      "deliberate": { "$value": "{duration.700}", "$description": "Intentional storytelling — onboarding, empty states, celebrations" }
+    },
+
+    "easing": {
+      "$description": "Named easing intents. Reference primitives; define the role of the curve.",
+      "enter": {
+        "$type": "cubicBezier",
+        "$value": "{easing.enter}",
+        "$description": "Element arriving on screen or gaining prominence. Decelerates to communicate weight."
+      },
+      "exit": {
+        "$type": "cubicBezier",
+        "$value": "{easing.exit}",
+        "$description": "Element leaving screen or losing prominence. Accelerates to communicate release. Use only for final exits — not for elements that will return."
+      },
+      "move": {
+        "$type": "cubicBezier",
+        "$value": "{easing.standard}",
+        "$description": "Repositioning within screen — element changes position but stays visible."
+      },
+      "emphasize": {
+        "$type": "cubicBezier",
+        "$value": "{easing.emphasize}",
+        "$description": "Drawing attention — signature, expressive movement. Use sparingly."
+      }
+    },
+
+    "spring": {
+      "$description": "Named spring intent aliases. Reference spring configs; define the character.",
+      "crisp": {
+        "$type": "custom-spring",
+        "$value": "{spring.config.crisp}",
+        "$description": "Sharp response — controls, precise interactions, spatial feedback without overshoot."
+      },
+      "gentle": {
+        "$type": "custom-spring",
+        "$value": "{spring.config.gentle}",
+        "$description": "Soft settle — panels, drawers, medium-weight transitions."
+      },
+      "bouncy": {
+        "$type": "custom-spring",
+        "$value": "{spring.config.bouncy}",
+        "$description": "Expressive overshoot — brand moments, playful interactions. Spatial only."
+      }
+    },
+
+    "transition": {
+      "$description": "Semantic composite transitions (depth 3). Combine duration + easing into named patterns. DTCG transition type.",
+
+      "enter": {
+        "$type": "transition",
+        "$value": {
+          "duration": "{motion.duration.slow}",
+          "timingFunction": "{motion.easing.enter}",
+          "delay": "0ms"
+        },
+        "$description": "Standard element entrance — modal, panel, overlay appears."
+      },
+      "exit": {
+        "$type": "transition",
+        "$value": {
+          "duration": "{motion.duration.fast}",
+          "timingFunction": "{motion.easing.exit}",
+          "delay": "0ms"
+        },
+        "$description": "Standard element exit. Fast + accelerating communicates decisiveness."
+      },
+      "move": {
+        "$type": "transition",
+        "$value": {
+          "duration": "{motion.duration.default}",
+          "timingFunction": "{motion.easing.move}",
+          "delay": "0ms"
+        },
+        "$description": "Element repositioning within screen."
+      },
+      "expand": {
+        "$type": "transition",
+        "$value": {
+          "duration": "{motion.duration.default}",
+          "timingFunction": "{motion.easing.enter}",
+          "delay": "0ms"
+        },
+        "$description": "Expansion — accordion, collapsible content, growing container."
+      },
+      "feedback": {
+        "$type": "transition",
+        "$value": {
+          "duration": "{motion.duration.instant}",
+          "timingFunction": "{motion.easing.move}",
+          "delay": "0ms"
+        },
+        "$description": "Immediate response to user action — button press, checkbox check. Should feel instantaneous."
+      }
+    },
+
+    "stagger": {
+      "$description": "Application-level relationship tokens (depth 4). Describe timing relationships between multiple elements, not properties of a single element. Require context (element count, layout) to resolve.",
+      "$extensions": {
+        "note": "These tokens cannot resolve to a CSS property alone — they require a JS resolver that knows the element count. See backlog for implementation."
+      },
+      "list": {
+        "$type": "custom-stagger",
+        "$value": { "interval": "20ms", "from": "start", "cap": "500ms" },
+        "$description": "Vertical list entrance — each item enters with a 20ms offset, capped at 500ms total."
+      },
+      "grid": {
+        "$type": "custom-stagger",
+        "$value": { "interval": "30ms", "from": "center" },
+        "$description": "Grid entrance from center outward."
+      }
+    }
+  }
+}
